@@ -252,6 +252,7 @@ static int ixgbe_set_pool_vlan_anti_spoof(struct rte_eth_dev *dev,
 		uint32_t vf, uint8_t on);
 static int ixgbe_set_pool_mac_anti_spoof(struct rte_eth_dev *dev,
 		uint32_t vf, uint8_t on);
+static int ixgbe_ping_vfs(struct rte_eth_dev *dev, int32_t vf);
 static int ixgbe_mirror_rule_set(struct rte_eth_dev *dev,
 		struct rte_eth_mirror_conf *mirror_conf,
 		uint8_t rule_id, uint8_t on);
@@ -467,6 +468,7 @@ static const struct eth_dev_ops ixgbe_eth_dev_ops = {
 	.set_vf_vlan_filter   = ixgbe_set_pool_vlan_filter,
 	.set_vf_vlan_anti_spoof  = ixgbe_set_pool_vlan_anti_spoof,
 	.set_vf_mac_anti_spoof   = ixgbe_set_pool_mac_anti_spoof,
+	.ping_vfs             = ixgbe_ping_vfs,
 	.set_queue_rate_limit = ixgbe_set_queue_rate_limit,
 	.set_vf_rate_limit    = ixgbe_set_vf_rate_limit,
 	.reta_update          = ixgbe_dev_rss_reta_update,
@@ -4327,6 +4329,32 @@ ixgbe_set_pool_mac_anti_spoof(struct rte_eth_dev *dev,
 	
 	pfvfspoof = IXGBE_READ_REG(hw, IXGBE_PFVFSPOOF(vf_target_reg));
 	
+	return ret;
+}
+
+static int 
+ixgbe_ping_vfs(struct rte_eth_dev *dev, int32_t vf)
+{
+	int ret = 0;   
+	struct ixgbe_hw *hw =
+		IXGBE_DEV_PRIVATE_TO_HW(dev->data->dev_private);
+
+	struct ixgbe_vf_info *vfinfo =
+		*IXGBE_DEV_PRIVATE_TO_P_VFDATA(dev->data->dev_private);
+    
+	u32 ping;
+	int i;
+  
+	for (i = 0; i < dev->pci_dev->max_vfs; i++) {
+		ping = IXGBE_PF_CONTROL_MSG;
+		if (vfinfo[i].clear_to_send)
+			ping |= IXGBE_VT_MSGTYPE_CTS;
+    
+		/* ping every VF or only one specified */
+		if (vf < 0 || vf == i)
+			ixgbe_write_mbx(hw, &ping, 1, i);
+	}
+
 	return ret;
 }
 

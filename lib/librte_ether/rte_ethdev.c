@@ -2338,6 +2338,22 @@ rte_eth_dev_set_vf_mac_anti_spoof(uint8_t port_id,
 						   vf, on);  
 }
 
+int
+rte_eth_dev_ping_vfs(uint8_t port_id, int32_t vf)
+{
+	struct rte_eth_dev *dev;
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+
+	dev = &rte_eth_devices[port_id];
+	if ( vf > 64) {
+		RTE_PMD_DEBUG_TRACE("VF ping: VM %d > 64\n", vf);
+		return -EINVAL;
+	}
+
+	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->ping_vfs, -ENOTSUP);
+	return (*dev->dev_ops->ping_vfs)(dev, vf);  
+}
+
 int rte_eth_set_queue_rate_limit(uint8_t port_id, uint16_t queue_idx,
 					uint16_t tx_rate)
 {

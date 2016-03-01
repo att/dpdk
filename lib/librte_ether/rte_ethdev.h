@@ -1193,6 +1193,10 @@ typedef int (*eth_set_vf_mac_anti_spoof_t)(struct rte_eth_dev *dev,
 				  uint8_t on);
 /**< @internal Set VF MAC anti spoof */
 
+typedef int (*eth_ping_vfs_t)(struct rte_eth_dev *dev,
+				int32_t vf);
+/**< @internal ping one or all vf's */
+
 typedef int (*eth_set_queue_rate_limit_t)(struct rte_eth_dev *dev,
 				uint16_t queue_idx,
 				uint16_t tx_rate);
@@ -1395,6 +1399,7 @@ struct eth_dev_ops {
 	eth_set_vf_vlan_filter_t   set_vf_vlan_filter;  /**< Set VF VLAN filter */
 	eth_set_vf_vlan_anti_spoof_t  set_vf_vlan_anti_spoof; /**< Set VF VLAN anti spoof */
 	eth_set_vf_mac_anti_spoof_t   set_vf_mac_anti_spoof;  /**< Set VF MAC anti spoof */
+	eth_ping_vfs_t             ping_vfs;                  /**< Ping one or all VF's */
 	eth_udp_tunnel_add_t       udp_tunnel_add;
 	eth_udp_tunnel_del_t       udp_tunnel_del;
 	eth_set_queue_rate_limit_t set_queue_rate_limit;   /**< Set queue rate limit */
@@ -3161,6 +3166,24 @@ int
 rte_eth_dev_set_vf_mac_anti_spoof(uint8_t port,
 				uint32_t vf,
 				uint8_t on);      
+
+/**
+ * Ping all or specified VF 
+ *
+ * @param port_id
+ *   The port identifier of the Ethernet device.
+ * @param vf
+ * ID specifying VF ID to ping or all if -1.
+ *
+ * @return
+ *   - (0) if successful.
+ *   - (-ENOTSUP) if hardware doesn't support this feature.
+ *   - (-ENODEV) if *port_id* invalid.
+ *   - (-EINVAL) if bad parameter.
+ */
+int
+rte_eth_dev_ping_vfs(uint8_t port,
+				int32_t vf);    
 
 /**
  * Set a traffic mirroring rule on an Ethernet device
