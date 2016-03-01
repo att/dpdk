@@ -613,26 +613,65 @@ ixgbe_rcv_msg_from_vf(struct rte_eth_dev *dev, uint16_t vf)
 	/* flush the ack before we write any messages back */
 	IXGBE_WRITE_FLUSH(hw);
 
+	/* 
+	 * cb_param[0] lower bytes holds vf id, rest mbox msg
+	 * to send to user application
+	 * will return response from user
+	 */
+	uint16_t m = (msgbuf[0] & 0xffff);
+	uint32_t m_type = (m << 16); 
+	uint32_t cb_param[IXGBE_VFMAILBOX_SIZE];
+
+	/* copy msgbuf to cb_param */
+	int i;
+	for(i = 0; i < IXGBE_VFMAILBOX_SIZE; i++)
+		cb_param[i] = msgbuf[i];
+   
+	cb_param[0] = m_type | vf; 
+	
 	/* perform VF reset */
 	if (msgbuf[0] == IXGBE_VF_RESET) {
 		int ret = ixgbe_vf_reset(dev, vf, msgbuf);
 		vfinfo[vf].clear_to_send = true;
+		
+		/* notify application about VF reset */
+		_rte_eth_dev_callback_process_vf(dev, RTE_ETH_EVENT_VF_MBOX, &cb_param); 
 		return ret;
 	}
 
+	/* 
+	 * ask user application if we allowed to perform those functions 
+	 * if we get cb_param[0] == RTE_ETH_MB_EVENT_PROCEED then BAU, 
+	 * if 0, do nothing and send ACK to VF
+	 * if cb_param[0] > 1, do nothing and send NAK to VF
+	 */
+	_rte_eth_dev_callback_process_vf(dev, RTE_ETH_EVENT_VF_MBOX, &cb_param);
+	
 	/* check & process VF to PF mailbox message */
 	switch ((msgbuf[0] & 0xFFFF)) {
 	case IXGBE_VF_SET_MAC_ADDR:
-		retval = ixgbe_vf_set_mac_addr(dev, vf, msgbuf);
+		if(cb_param[0] == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_mac_addr(dev, vf, msgbuf);
+		else
+			retval = cb_param[0];
 		break;
 	case IXGBE_VF_SET_MULTICAST:
-		retval = ixgbe_vf_set_multicast(dev, vf, msgbuf);
+		if(cb_param[0] == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_multicast(dev, vf, msgbuf);
+		else
+			retval = cb_param[0];
 		break;
 	case IXGBE_VF_SET_LPE:
-		retval = ixgbe_set_vf_lpe(dev, vf, msgbuf);
+		if(cb_param[0] == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_set_vf_lpe(dev, vf, msgbuf);
+		else
+			retval = cb_param[0];
 		break;
 	case IXGBE_VF_SET_VLAN:
-		retval = ixgbe_vf_set_vlan(dev, vf, msgbuf);
+		if(cb_param[0] == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_vlan(dev, vf, msgbuf);
+		else
+			retval = cb_param[0];
 		break;
 	case IXGBE_VF_API_NEGOTIATE:
 		retval = ixgbe_negotiate_vf_api(dev, vf, msgbuf);
