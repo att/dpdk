@@ -1234,6 +1234,11 @@ typedef int (*eth_set_vf_vlan_anti_spoof_t)(struct rte_eth_dev *dev,
 				  uint8_t on);
 /**< @internal Set VF VLAN anti spoof */
 
+typedef int (*eth_set_vf_mac_anti_spoof_t)(struct rte_eth_dev *dev,
+				  uint32_t vf,
+				  uint8_t on);
+/**< @internal Set VF MAC anti spoof */
+
 typedef int (*eth_ping_vfs_t)(struct rte_eth_dev *dev,
 				int32_t vf);
 /**< @internal ping one or all vf's */
@@ -1452,6 +1457,7 @@ struct eth_dev_ops {
 	eth_set_vf_tx_t            set_vf_tx;  /**< enable/disable a VF transmit */
 	eth_set_vf_vlan_filter_t   set_vf_vlan_filter;  /**< Set VF VLAN filter */
 	eth_set_vf_vlan_anti_spoof_t  set_vf_vlan_anti_spoof; /**< Set VF VLAN anti spoof */
+	eth_set_vf_mac_anti_spoof_t   set_vf_mac_anti_spoof;  /**< Set VF MAC anti spoof */
 	eth_ping_vfs_t             ping_vfs;  /**< Ping one or all VF's */
 	/** Add UDP tunnel port. */
 	eth_udp_tunnel_port_add_t udp_tunnel_port_add;
@@ -3457,6 +3463,27 @@ int
 rte_eth_dev_set_vf_vlan_anti_spoof(uint8_t port,
 				uint32_t vf,
 				uint8_t on);
+
+/**
+* Enable/Disable VF MAC anti spoofing.
+*
+* @param port id
+*   The port identifier of the Ethernet device.
+* @param vf
+*    ID listing VF to set MAC anti spoofing.
+* @param vlan_on
+*    1 - Enable VFs MAC anti spoofing.
+*    0 - Disable VFs MAC anti spoofing.
+* @return
+*   - (0) if successful.
+*   - (-ENOTSUP) if hardware doesn't support.
+*   - (-ENODEV) if *port_id* invalid.
+*   - (-EINVAL) if bad parameter.
+*/
+int
+rte_eth_dev_set_vf_mac_anti_spoof(uint8_t port,
+				uint32_t vf,
+				uint8_t on);   
 
 /**
  * Ping all or specified VF 
