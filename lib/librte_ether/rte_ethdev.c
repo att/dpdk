@@ -1849,6 +1849,30 @@ rte_eth_dev_set_vlan_strip_on_queue(uint8_t port_id, uint16_t rx_queue_id, int o
 }
 
 int
+rte_eth_dev_set_vf_vlan_strip_on(uint8_t port_id, uint16_t vf_id, int on)
+{
+	struct rte_eth_dev *dev;
+
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+	dev = &rte_eth_devices[port_id];
+	
+	uint32_t queues_per_pool = RTE_ETH_DEV_SRIOV(dev).nb_q_per_pool;
+
+	if (vf_id >= RTE_ETH_DEV_SRIOV(dev).active) {
+		RTE_PMD_DEBUG_TRACE("Invalid vf_id=%d\n", vf_id);
+		return -EINVAL;
+	}
+
+	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->vlan_strip_queue_set, -ENOTSUP);
+	
+	uint32_t q;
+  for(q = 0; q < queues_per_pool; ++q)
+		(*dev->dev_ops->vlan_strip_queue_set)(dev, q + vf_id * queues_per_pool, on);
+
+	return 0;
+}
+
+int
 rte_eth_dev_set_vlan_ether_type(uint8_t port_id,
 				enum rte_vlan_type vlan_type,
 				uint16_t tpid)

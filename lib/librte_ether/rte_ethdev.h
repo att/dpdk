@@ -2528,6 +2528,27 @@ int rte_eth_dev_set_vlan_strip_on_queue(uint8_t port_id, uint16_t rx_queue_id,
 		int on);
 
 /**
+ * Enable/Disable hardware VLAN Strip by a rx queue of an Ethernet device.
+ * 82599/X540/X550 can support VLAN stripping at the rx queue level
+ *
+ * @param port_id
+ *   The port identifier of the Ethernet device.
+ * @param vf_id
+ *   The VF for which VLAN id have to be stripped.
+ *   The value must be in the range [0, max_vf - 1]
+ * @param on
+ *   If 1, Enable VLAN Stripping of the receive queue of the Ethernet port.
+ *   If 0, Disable VLAN Stripping of the receive queue of the Ethernet port.
+ * @return
+ *   - (0) if successful.
+ *   - (-ENOSUP) if hardware-assisted VLAN stripping not configured.
+ *   - (-ENODEV) if *port_id* invalid.
+ *   - (-EINVAL) if *vf_id* invalid.
+ */
+int rte_eth_dev_set_vf_vlan_strip_on(uint8_t port_id, uint16_t vf_id,
+		int on);
+		
+/**
  * Set the Outer VLAN Ether Type by an Ethernet device, it can be inserted to
  * the VLAN Header. This is a register setup available on some Intel NIC, not
  * but all, please check the data sheet for availability.
