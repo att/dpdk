@@ -2491,6 +2491,25 @@ rte_eth_dev_set_vf_vlan_filter(uint8_t port_id, uint16_t vlan_id,
 }
 
 int
+rte_eth_dev_set_vf_vlan_anti_spoof(uint8_t port_id,
+			       uint32_t vf, uint8_t on)
+{
+	struct rte_eth_dev *dev;
+
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+
+	dev = &rte_eth_devices[port_id];
+	if ( vf > 64) {
+		RTE_PMD_DEBUG_TRACE("VF VLAN anti spoof:VM %d > 64\n", vf);
+		return -EINVAL;
+	}
+	
+	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->set_vf_vlan_anti_spoof, -ENOTSUP);
+	return (*dev->dev_ops->set_vf_vlan_anti_spoof)(dev,
+						   vf, on);  
+}
+
+int
 rte_eth_dev_ping_vfs(uint8_t port_id, int32_t vf)
 {
 	struct rte_eth_dev *dev;

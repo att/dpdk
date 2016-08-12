@@ -280,6 +280,8 @@ static int ixgbe_set_pool_rx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on)
 static int ixgbe_set_pool_tx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on);
 static int ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 		uint64_t pool_mask, uint8_t vlan_on);
+static int ixgbe_set_pool_vlan_anti_spoof(struct rte_eth_dev *dev,
+		uint32_t vf, uint8_t on);
 static int ixgbe_ping_vfs(struct rte_eth_dev *dev, int32_t vf); 
 static int ixgbe_mirror_rule_set(struct rte_eth_dev *dev,
 		struct rte_eth_mirror_conf *mirror_conf,
@@ -514,6 +516,7 @@ static const struct eth_dev_ops ixgbe_eth_dev_ops = {
 	.set_vf_rx            = ixgbe_set_pool_rx,
 	.set_vf_tx            = ixgbe_set_pool_tx,
 	.set_vf_vlan_filter   = ixgbe_set_pool_vlan_filter,
+	.set_vf_vlan_anti_spoof  = ixgbe_set_pool_vlan_anti_spoof,
 	.ping_vfs             = ixgbe_ping_vfs, 
 	.set_queue_rate_limit = ixgbe_set_queue_rate_limit,
 	.set_vf_rate_limit    = ixgbe_set_vf_rate_limit,
@@ -4602,6 +4605,34 @@ ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 				return ret;
 		}
 	}
+
+	return ret;
+}
+
+static int
+ixgbe_set_pool_vlan_anti_spoof(struct rte_eth_dev *dev,
+			uint32_t vf, uint8_t on)
+{
+	int ret = 0;
+	struct ixgbe_hw *hw =
+	IXGBE_DEV_PRIVATE_TO_HW(dev->data->dev_private);
+    
+	int vf_target_reg = vf >> 3;
+	int vf_target_shift = vf % 8 + IXGBE_SPOOF_VLANAS_SHIFT;
+	u32 pfvfspoof;
+
+	if (hw->mac.type == ixgbe_mac_82598EB)
+		return 0;
+  
+	pfvfspoof = IXGBE_READ_REG(hw, IXGBE_PFVFSPOOF(vf_target_reg));
+   
+	if (on)
+		pfvfspoof |= (1 << vf_target_shift);
+	else
+		pfvfspoof &= ~(1 << vf_target_shift);
+	
+	IXGBE_WRITE_REG(hw, IXGBE_PFVFSPOOF(vf_target_reg), pfvfspoof);
+	pfvfspoof = IXGBE_READ_REG(hw, IXGBE_PFVFSPOOF(vf_target_reg));
 
 	return ret;
 }
