@@ -674,27 +674,54 @@ ixgbe_rcv_msg_from_vf(struct rte_eth_dev *dev, uint16_t vf)
 	/* flush the ack before we write any messages back */
 	IXGBE_WRITE_FLUSH(hw);
 
+	/* 
+	 * create structure to send to user application
+	 * will return response from user in retval field
+	 */
+	struct rte_eth_mb_event_param cb_param;
+	cb_param.retval = RTE_ETH_MB_EVENT_PROCEED;
+	cb_param.vfid = vf;
+	cb_param.msg_type = msgbuf[0] & 0xFFFF;
+	cb_param.userdata = (void *) msgbuf;
+	
 	/* perform VF reset */
 	if (msgbuf[0] == IXGBE_VF_RESET) {
 		int ret = ixgbe_vf_reset(dev, vf, msgbuf);
 
 		vfinfo[vf].clear_to_send = true;
+		
+		/* notify application about VF reset */
+		_rte_eth_dev_callback_process_vf(dev, RTE_ETH_EVENT_VF_MBOX, &cb_param);
 		return ret;
 	}
 
+	/* 
+	 * ask user application if we allowed to perform those functions 
+	 * if we get cb_param.retval == RTE_ETH_MB_EVENT_PROCEED then BAU, 
+	 * if 0, do nothing and send ACK to VF
+	 * if cb_param.retval > 1, do nothing and send NAK to VF
+	 */
+	_rte_eth_dev_callback_process_vf(dev, RTE_ETH_EVENT_VF_MBOX, &cb_param);
+	
+	retval = cb_param.retval;
+	
 	/* check & process VF to PF mailbox message */
 	switch ((msgbuf[0] & 0xFFFF)) {
 	case IXGBE_VF_SET_MAC_ADDR:
-		retval = ixgbe_vf_set_mac_addr(dev, vf, msgbuf);
+		if(retval == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_mac_addr(dev, vf, msgbuf);
 		break;
 	case IXGBE_VF_SET_MULTICAST:
-		retval = ixgbe_vf_set_multicast(dev, vf, msgbuf);
+		if(retval == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_multicast(dev, vf, msgbuf);
 		break;
 	case IXGBE_VF_SET_LPE:
-		retval = ixgbe_set_vf_lpe(dev, vf, msgbuf);
+		if(retval == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_set_vf_lpe(dev, vf, msgbuf);
 		break;
 	case IXGBE_VF_SET_VLAN:
-		retval = ixgbe_vf_set_vlan(dev, vf, msgbuf);
+		if(retval == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_vf_set_vlan(dev, vf, msgbuf);
 		break;
 	case IXGBE_VF_API_NEGOTIATE:
 		retval = ixgbe_negotiate_vf_api(dev, vf, msgbuf);
@@ -704,7 +731,8 @@ ixgbe_rcv_msg_from_vf(struct rte_eth_dev *dev, uint16_t vf)
 		msg_size = IXGBE_VF_GET_QUEUE_MSG_SIZE;
 		break;
 	case IXGBE_VF_UPDATE_XCAST_MODE:
-		retval = ixgbe_set_vf_mc_promisc(dev, vf, msgbuf);
+		if(retval == RTE_ETH_MB_EVENT_PROCEED)
+			retval = ixgbe_set_vf_mc_promisc(dev, vf, msgbuf);
 		break;
 	default:
 		PMD_DRV_LOG(DEBUG, "Unhandled Msg %8.8x", (unsigned)msgbuf[0]);

@@ -3064,7 +3064,25 @@ enum rte_eth_event_type {
 				/**< queue state event (enabled/disabled) */
 	RTE_ETH_EVENT_INTR_RESET,
 			/**< reset interrupt event, sent to VF on PF reset */
+	RTE_ETH_EVENT_VF_MBOX,  /**< PF mailbox processing callback */
 	RTE_ETH_EVENT_MAX       /**< max value of this enum */
+};
+
+/**
+ * Response sent back to ixgbe driver from user app after callback
+ */
+enum rte_eth_mb_event_rsp {
+	RTE_ETH_MB_EVENT_NOOP_ACK,  /**< skip mbox request and ACK */
+	RTE_ETH_MB_EVENT_NOOP_NACK, /**< skip mbox request and NACK */
+	RTE_ETH_MB_EVENT_PROCEED,  /**< proceed with mbox request  */
+	RTE_ETH_MB_EVENT_MAX       /**< max value of this enum */
+};
+
+struct rte_eth_mb_event_param {
+	uint16_t vfid;
+	uint16_t msg_type;
+	uint16_t retval;
+	void *userdata;
 };
 
 typedef void (*rte_eth_dev_cb_fn)(uint8_t port_id, \
@@ -3129,6 +3147,46 @@ int rte_eth_dev_callback_unregister(uint8_t port_id,
  */
 void _rte_eth_dev_callback_process(struct rte_eth_dev *dev,
 				enum rte_eth_event_type event);
+
+/**
+ * @internal Executes all the user application registered callbacks for
+ * the specific device where parameter have to be passed to user application.
+ * It is for DPDK internal user only. User application should not call it directly.
+ *
+ * @param dev
+ *  Pointer to struct rte_eth_dev.
+ * @param event
+ *  Eth device interrupt event type.
+ *
+ * @param param
+ *  parameters to pass back to user application.
+ *
+ * @return
+ *  void
+ */ 
+void
+_rte_eth_dev_callback_process_vf(struct rte_eth_dev *dev,
+				enum rte_eth_event_type event, void *param);
+
+/**
+ * @internal Executes all the user application registered callbacks. Used by:
+ * _rte_eth_dev_callback_process and _rte_eth_dev_callback_process_vf
+ * It is for DPDK internal user only. User application should not call it directly.
+ *
+ * @param dev
+ *  Pointer to struct rte_eth_dev.
+ * @param event
+ *  Eth device interrupt event type.
+ *
+ * @param param
+ *  parameters to pass back to user application.
+ *
+ * @return
+ *  void
+ */ 
+void
+_rte_eth_dev_callback_process_generic(struct rte_eth_dev *dev,
+				enum rte_eth_event_type event, void *param);
 
 /**
  * When there is no rx packet coming in Rx Queue for a long time, we can

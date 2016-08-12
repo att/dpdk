@@ -2744,6 +2744,20 @@ void
 _rte_eth_dev_callback_process(struct rte_eth_dev *dev,
 	enum rte_eth_event_type event)
 {
+	return _rte_eth_dev_callback_process_generic(dev, event, NULL);
+}
+
+void
+_rte_eth_dev_callback_process_vf(struct rte_eth_dev *dev,
+	enum rte_eth_event_type event, void *param) 
+{
+	return _rte_eth_dev_callback_process_generic(dev, event, param);
+}
+
+void
+_rte_eth_dev_callback_process_generic(struct rte_eth_dev *dev,
+	enum rte_eth_event_type event, void *param)
+{
 	struct rte_eth_dev_callback *cb_lst;
 	struct rte_eth_dev_callback dev_cb;
 
@@ -2753,6 +2767,9 @@ _rte_eth_dev_callback_process(struct rte_eth_dev *dev,
 			continue;
 		dev_cb = *cb_lst;
 		cb_lst->active = 1;
+		if (param != NULL)
+			dev_cb.cb_arg = (void *) param; 
+		
 		rte_spinlock_unlock(&rte_eth_dev_cb_lock);
 		dev_cb.cb_fn(dev->data->port_id, dev_cb.event,
 						dev_cb.cb_arg);
