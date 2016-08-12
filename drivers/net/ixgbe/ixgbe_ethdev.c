@@ -280,6 +280,8 @@ static int ixgbe_set_pool_rx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on)
 static int ixgbe_set_pool_tx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on);
 static int ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 		uint64_t pool_mask, uint8_t vlan_on);
+static int ixgbe_vlan_insert_vf_set(struct rte_eth_dev *dev,
+		uint16_t vf, uint16_t vlan);
 static int ixgbe_set_pool_vlan_anti_spoof(struct rte_eth_dev *dev,
 		uint32_t vf, uint8_t on);
 static int ixgbe_set_pool_mac_anti_spoof(struct rte_eth_dev *dev,
@@ -518,6 +520,7 @@ static const struct eth_dev_ops ixgbe_eth_dev_ops = {
 	.set_vf_rx            = ixgbe_set_pool_rx,
 	.set_vf_tx            = ixgbe_set_pool_tx,
 	.set_vf_vlan_filter   = ixgbe_set_pool_vlan_filter,
+	.set_vf_vlan_insert   = ixgbe_vlan_insert_vf_set,
 	.set_vf_vlan_anti_spoof  = ixgbe_set_pool_vlan_anti_spoof,
 	.set_vf_mac_anti_spoof   = ixgbe_set_pool_mac_anti_spoof, 
 	.ping_vfs             = ixgbe_ping_vfs, 
@@ -4608,6 +4611,38 @@ ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 				return ret;
 		}
 	}
+
+	return ret;
+}
+
+static int
+ixgbe_vlan_insert_vf_set(struct rte_eth_dev *dev, uint16_t vf, uint16_t vlan)
+{
+	int ret = 0;
+	uint32_t vmvir;
+	struct ixgbe_hw *hw = IXGBE_DEV_PRIVATE_TO_HW(dev->data->dev_private);
+
+	if (vf >= dev->pci_dev->max_vfs) {
+		PMD_DRV_LOG(ERR,
+			    "VF id %u should be less than %u",
+			    vf,
+			    dev->pci_dev->max_vfs);
+		return -EINVAL;
+	}
+	
+	if (vlan > 4095) {
+		PMD_DRV_LOG(ERR,"Invalid vlan_id=%d\n", vlan);
+		return -EINVAL;
+	}
+
+	if (vlan){
+		vmvir = vlan;
+		vmvir |= IXGBE_VMVIR_VLANA_DEFAULT;
+	} else {
+		vmvir = 0;
+	}
+	
+	IXGBE_WRITE_REG(hw, IXGBE_VMVIR(vf), vmvir);
 
 	return ret;
 }

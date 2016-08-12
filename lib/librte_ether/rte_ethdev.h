@@ -1261,6 +1261,11 @@ typedef int (*eth_set_vf_vlan_filter_t)(struct rte_eth_dev *dev,
 				  uint8_t vlan_on);
 /**< @internal Set VF VLAN pool filter */
 
+typedef int (*eth_set_vf_vlan_insert_t)(struct rte_eth_dev *dev,
+				  uint16_t vf,
+				  uint16_t vlan);
+/**< @internal Set VF VLAN insert */
+
 typedef int (*eth_set_vf_vlan_anti_spoof_t)(struct rte_eth_dev *dev,
 				  uint32_t vf,
 				  uint8_t on);
@@ -1487,6 +1492,7 @@ struct eth_dev_ops {
 	eth_set_vf_rx_t            set_vf_rx;  /**< enable/disable a VF receive */
 	eth_set_vf_tx_t            set_vf_tx;  /**< enable/disable a VF transmit */
 	eth_set_vf_vlan_filter_t   set_vf_vlan_filter;  /**< Set VF VLAN filter */
+	eth_set_vf_vlan_insert_t   set_vf_vlan_insert;  /**< Set VF VLAN insert */ 
 	eth_set_vf_vlan_anti_spoof_t  set_vf_vlan_anti_spoof; /**< Set VF VLAN anti spoof */ 
 	eth_set_vf_mac_anti_spoof_t   set_vf_mac_anti_spoof;  /**< Set VF MAC anti spoof */
 	eth_ping_vfs_t             ping_vfs;  /**< Ping one or all VF's */
@@ -2528,6 +2534,27 @@ int rte_eth_dev_set_vlan_strip_on_queue(uint8_t port_id, uint16_t rx_queue_id,
 		int on);
 
 /**
+ * Insert VLAN ID on transmit by VF of an Ethernet device.
+ *
+ * @param port_id
+ *   The port identifier of the Ethernet device.
+ * @param vf_id
+ *   The VF for which VLAN ID have to be inserted.
+ *   The value must be in the range [0, max_vf - 1]
+ * @param vlan_id
+ *   If 1-4095, VLAN ID to insert.
+ *   If 0, Do not insert VLAN.
+ * @return
+ *   - (0) if successful.
+ *   - (-ENOSUP) if hardware-assisted VLAN insert not configured.
+ *   - (-ENODEV) if *port_id* invalid.
+ *   - (-EINVAL) if *vf_id* invalid.
+ *   - (-EINVAL) if *vlan_id* invalid.
+ */
+int rte_eth_dev_set_vf_vlan_insert(uint8_t port_id, uint16_t vf_id, 
+		uint16_t vlan_id);
+
+/**
  * Enable/Disable hardware VLAN Strip by a rx queue of an Ethernet device.
  * 82599/X540/X550 can support VLAN stripping at the rx queue level
  *
@@ -2547,7 +2574,7 @@ int rte_eth_dev_set_vlan_strip_on_queue(uint8_t port_id, uint16_t rx_queue_id,
  */
 int rte_eth_dev_set_vf_vlan_strip_on(uint8_t port_id, uint16_t vf_id,
 		int on);
-		
+
 /**
  * Set the Outer VLAN Ether Type by an Ethernet device, it can be inserted to
  * the VLAN Header. This is a register setup available on some Intel NIC, not

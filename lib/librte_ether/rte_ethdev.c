@@ -1872,6 +1872,33 @@ rte_eth_dev_set_vf_vlan_strip_on(uint8_t port_id, uint16_t vf_id, int on)
 	return 0;
 }
 
+
+int
+rte_eth_dev_set_vf_vlan_insert(uint8_t port_id, uint16_t vf_id, uint16_t vlan_id)
+{
+	struct rte_eth_dev *dev;
+
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+	dev = &rte_eth_devices[port_id];
+
+	if (vf_id >= RTE_ETH_DEV_SRIOV(dev).active) {
+		RTE_PMD_DEBUG_TRACE("Invalid vf_id=%d\n", vf_id);
+		return -EINVAL;
+	}
+
+	if (vlan_id > 4095) {
+		RTE_PMD_DEBUG_TRACE("Invalid vlan_id=%d\n", vlan_id);
+		return -EINVAL;
+	}
+
+	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->set_vf_vlan_insert, -ENOTSUP);
+	
+	(*dev->dev_ops->set_vf_vlan_insert)(dev, vf_id, vlan_id);
+
+	return 0;
+}
+
+
 int
 rte_eth_dev_set_vlan_ether_type(uint8_t port_id,
 				enum rte_vlan_type vlan_type,
