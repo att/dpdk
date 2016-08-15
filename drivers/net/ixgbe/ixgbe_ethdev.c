@@ -280,6 +280,7 @@ static int ixgbe_set_pool_rx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on)
 static int ixgbe_set_pool_tx(struct rte_eth_dev *dev, uint16_t pool, uint8_t on);
 static int ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 		uint64_t pool_mask, uint8_t vlan_on);
+static int ixgbe_set_loopback_on(struct rte_eth_dev *dev, uint8_t on);
 static int ixgbe_vlan_insert_vf_set(struct rte_eth_dev *dev,
 		uint16_t vf, uint16_t vlan);
 static int ixgbe_set_pool_vlan_anti_spoof(struct rte_eth_dev *dev,
@@ -520,6 +521,7 @@ static const struct eth_dev_ops ixgbe_eth_dev_ops = {
 	.set_vf_rx            = ixgbe_set_pool_rx,
 	.set_vf_tx            = ixgbe_set_pool_tx,
 	.set_vf_vlan_filter   = ixgbe_set_pool_vlan_filter,
+	.set_loopback_on			= ixgbe_set_loopback_on,
 	.set_vf_vlan_insert   = ixgbe_vlan_insert_vf_set,
 	.set_vf_vlan_anti_spoof  = ixgbe_set_pool_vlan_anti_spoof,
 	.set_vf_mac_anti_spoof   = ixgbe_set_pool_mac_anti_spoof, 
@@ -4615,6 +4617,24 @@ ixgbe_set_pool_vlan_filter(struct rte_eth_dev *dev, uint16_t vlan,
 				return ret;
 		}
 	}
+
+	return ret;
+}
+
+static int 
+ixgbe_set_loopback_on(struct rte_eth_dev *dev, uint8_t on)
+{
+	int ret = 0;   
+	struct ixgbe_hw *hw =
+		IXGBE_DEV_PRIVATE_TO_HW(dev->data->dev_private);
+	uint32_t ctrl = IXGBE_READ_REG(hw, IXGBE_PFDTXGSWC);
+
+	if (on)
+		ctrl |= IXGBE_PFDTXGSWC_VT_LBEN;
+	else
+		ctrl &= ~IXGBE_PFDTXGSWC_VT_LBEN;
+	
+	IXGBE_WRITE_REG(hw, IXGBE_PFDTXGSWC, ctrl);
 
 	return ret;
 }

@@ -1261,6 +1261,10 @@ typedef int (*eth_set_vf_vlan_filter_t)(struct rte_eth_dev *dev,
 				  uint8_t vlan_on);
 /**< @internal Set VF VLAN pool filter */
 
+typedef int (*eth_set_loopback_on_t)(struct rte_eth_dev *dev,
+				uint8_t on);
+/**< @internal set loopback on/off */
+
 typedef int (*eth_set_vf_vlan_insert_t)(struct rte_eth_dev *dev,
 				  uint16_t vf,
 				  uint16_t vlan);
@@ -1492,6 +1496,7 @@ struct eth_dev_ops {
 	eth_set_vf_rx_t            set_vf_rx;  /**< enable/disable a VF receive */
 	eth_set_vf_tx_t            set_vf_tx;  /**< enable/disable a VF transmit */
 	eth_set_vf_vlan_filter_t   set_vf_vlan_filter;  /**< Set VF VLAN filter */
+	eth_set_loopback_on_t      set_loopback_on;  /**< set port's loopback on */ 
 	eth_set_vf_vlan_insert_t   set_vf_vlan_insert;  /**< Set VF VLAN insert */ 
 	eth_set_vf_vlan_anti_spoof_t  set_vf_vlan_anti_spoof; /**< Set VF VLAN anti spoof */ 
 	eth_set_vf_mac_anti_spoof_t   set_vf_mac_anti_spoof;  /**< Set VF MAC anti spoof */
@@ -3616,6 +3621,23 @@ int
 rte_eth_dev_set_vf_vlan_filter(uint8_t port, uint16_t vlan_id,
 				uint64_t vf_mask,
 				uint8_t vlan_on);
+
+/**
+ * Enable/Disable Tx->Rx loopback operation 
+ *
+ * @param port_id
+ *   The port identifier of the Ethernet device.
+ * @param on
+ *    1 - Enable Tx->Rx loopback.
+ *    0 - Disable Tx->Rx loopback.
+ *
+ * @return
+ *   - (0) if successful.
+ *   - (-ENODEV) if *port_id* invalid.
+ */
+int
+rte_eth_dev_set_loopback_on(uint8_t port,
+				uint8_t on); 
 
 /**
 * Enable/Disable VF VLAN anti spoofing.

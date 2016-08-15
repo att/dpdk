@@ -2542,6 +2542,18 @@ rte_eth_dev_set_vf_vlan_filter(uint8_t port_id, uint16_t vlan_id,
 }
 
 int
+rte_eth_dev_set_loopback_on(uint8_t port_id, uint8_t on)
+{
+	struct rte_eth_dev *dev;
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+
+	dev = &rte_eth_devices[port_id];
+
+	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->set_loopback_on, -ENOTSUP);
+	return (*dev->dev_ops->set_loopback_on)(dev, on);  
+}
+
+int
 rte_eth_dev_set_vf_vlan_anti_spoof(uint8_t port_id,
 			       uint32_t vf, uint8_t on)
 {
