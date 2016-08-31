@@ -386,6 +386,8 @@ ixgbe_vf_reset_msg(struct rte_eth_dev *dev, uint16_t vf)
 	uint32_t reg_offset, vf_shift;
 	const uint8_t VFRE_SHIFT = 5;  /* VFRE 32 bits per slot */
 	const uint8_t VFRE_MASK = (uint8_t)((1U << VFRE_SHIFT) - 1);
+	uint32_t i;
+	uint32_t q_per_pool = RTE_ETH_DEV_SRIOV(dev).nb_q_per_pool;
 
 	vf_shift = vf & VFRE_MASK;
 	reg_offset = (vf >> VFRE_SHIFT) > 0 ? 1 : 0;
@@ -399,6 +401,14 @@ ixgbe_vf_reset_msg(struct rte_eth_dev *dev, uint16_t vf)
 	reg |= (reg | (1 << vf_shift));
 	IXGBE_WRITE_REG(hw, IXGBE_VFRE(reg_offset), reg);
 
+	/*
+	 * Reset VFs TDWBAL and TDWBAH registers
+	 */	 
+	for (i = 0; i < q_per_pool; i++) {
+		IXGBE_WRITE_REG(hw, IXGBE_PVFTDWBAHn(q_per_pool, vf, i), 0);
+		IXGBE_WRITE_REG(hw, IXGBE_PVFTDWBALn(q_per_pool, vf, i), 0);
+	}
+	
 	/* Enable counting of spoofed packets in the SSVPC register */
 	reg = IXGBE_READ_REG(hw, IXGBE_VMECM(reg_offset));
 	reg |= (1 << vf_shift);
